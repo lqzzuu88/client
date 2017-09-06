@@ -44,3 +44,6 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui
+
+
+#RC_FILE = uac.rc

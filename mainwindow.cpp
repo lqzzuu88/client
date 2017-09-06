@@ -42,11 +42,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     showMainWin = false;
 
-    QString application_path = QApplication::applicationDirPath();
+    //QSettings configIniFile("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //QString iniFileName = configIniFile.value("/inifile").toString();
 
+    //QString application_path2 = QApplication::applicationFilePath();
+    //QString application_path = QApplication::applicationDirPath();
     //QString iniFileName = QString("%1/setting.ini").arg(QApplication::applicationDirPath());
     //QSettings configRead(iniFileName, QSettings::IniFormat);
-    QSettings configRead("HKEY_CURRENT_USER\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //HKEY_CURRENT_USER
+    QSettings configRead("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
     QString masterIP = configRead.value("/IP/MASTER").toString();
     QString gatewayIP = configRead.value("/IP/GATEWAY").toString();
     bool delAndShut = configRead.value("/DELANDSHUT").toBool();
@@ -98,6 +102,39 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::setRegEdit(const QString& master, const QString& gateway, const QString& shut)
+{
+    QSettings configRead("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    QString instdir = configRead.value("/INSTDIR").toString();
+    if(instdir.isEmpty()) {
+        return;
+    }
+    //QProcess *cmd = new QProcess;
+    QString exefile = instdir + "\\chgregset.exe";
+    QString args = "\"" + master + "\" " + "\"" + gateway + "\" " +  "\"" + shut + "\"";
+    //cmd->start(strArg);
+    //cmd->waitForReadyRead(300);
+    //cmd->waitForFinished();
+
+    SHELLEXECUTEINFO sei={sizeof(SHELLEXECUTEINFO)};
+    sei.lpVerb = TEXT("runas");
+    sei.lpFile = reinterpret_cast<const wchar_t *>(exefile.utf16());//exefile.toStdWString().c_str();//TEXT("C:\\Users\\liaoqiong\\TC-Security-Client\\chgregset.exe");//
+    sei.lpParameters = reinterpret_cast<const wchar_t *>(args.utf16());//args.toStdWString().c_str();
+    //sei.nShow = SW_SHOW;
+    if(!ShellExecuteEx(&sei))
+    {
+        DWORD dwStatus=GetLastError();
+        if(dwStatus==ERROR_CANCELLED)
+        {
+            qDebug() << "ShellExecuteEx refused";
+        }
+        else if(dwStatus==ERROR_FILE_NOT_FOUND)
+        {
+            qDebug() << "ShellExecuteEx not found file";
+        }
+    }
+}
+
 void MainWindow::slot_setConfigIP()
 {
     hide();
@@ -116,12 +153,16 @@ void MainWindow::slot_setConfigIP()
     h2.setRemoveFile(delAndShut);
     h2.setShutDown(delAndShut);
 
+    //QSettings configIniFile("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //QString iniFileName = configIniFile.value("/inifile").toString();
     //QString iniFileName = QString("%1/setting.ini").arg(QApplication::applicationDirPath());
     //QSettings configWrite(iniFileName, QSettings::IniFormat);
-    QSettings configWrite("HKEY_CURRENT_USER\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
-    configWrite.setValue("/IP/MASTER", masterIP);
-    configWrite.setValue("/IP/GATEWAY", gatewayIP);
-    configWrite.setValue("/DELANDSHUT", delAndShut);
+    //QSettings configWrite("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //configWrite.setValue("/IP/MASTER", masterIP);
+    //configWrite.setValue("/IP/GATEWAY", gatewayIP);
+    //configWrite.setValue("/DELANDSHUT", delAndShut);
+
+    setRegEdit(masterIP, gatewayIP, delAndShut?"TRUE":"FALSE");
 
     h1.myresume();
     hgateway.myresume();
@@ -143,12 +184,15 @@ void MainWindow::closeEvent(QCloseEvent *event)
     QString gatewayIP = ui->gatewayIP->text();
     bool delAndShut = ui->checkBox->checkState() == Qt::Checked;
 
+    //QSettings configIniFile("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //QString iniFileName = configIniFile.value("/inifile").toString();
     //QString iniFileName = QString("%1/setting.ini").arg(QApplication::applicationDirPath());
     //QSettings configWrite(iniFileName, QSettings::IniFormat);
-    QSettings configWrite("HKEY_CURRENT_USER\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
-    configWrite.setValue("/IP/MASTER", masterIP);
-    configWrite.setValue("/IP/GATEWAY", gatewayIP);
-    configWrite.setValue("/DELANDSHUT", delAndShut);
+    //QSettings configWrite("HKEY_LOCAL_MACHINE\\Software\\HIGON\\TC-GUARD-CLIENT", QSettings::NativeFormat);
+    //configWrite.setValue("/IP/MASTER", masterIP);
+    //configWrite.setValue("/IP/GATEWAY", gatewayIP);
+    //configWrite.setValue("/DELANDSHUT", delAndShut);
+    //setRegEdit(masterIP, gatewayIP, delAndShut?"TRUE":"FALSE");
 
     QMainWindow::closeEvent(event);
 }

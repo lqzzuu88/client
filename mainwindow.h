@@ -21,6 +21,8 @@ public:
     void closeEvent(QCloseEvent *event);
     bool isShowMainWin();
 
+    void setRegEdit(const QString& master, const QString& gateway, const QString& shut);
+
 
 public slots:
     void slot_setConfigIP();
